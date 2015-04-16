@@ -6,36 +6,10 @@
   "genomes": {
     "hg19": {
       "datasets": [
-        "refGene.MYD",
-        "refGene.MYI",
-        "refGene.frm",
-        "refLink.MYD",
-        "refLink.MYI",
-        "refLink.frm",
-        "gbSeq.MYD",
-        "gbSeq.MYI",
-        "gbSeq.frm",
-        "gbExtFile.MYD",
-        "gbExtFile.MYI",
-        "gbExtFile.frm",
-        "refSeqAli.MYD",
-        "refSeqAli.MYI",
-        "refSeqAli.frm",
-        "refFlat.MYD",
-        "refFlat.MYI",
-        "refFlat.frm",
-        "refSeqStatus.MYD",
-        "refSeqStatus.MYI",
-        "refSeqStatus.frm",
-        "refSeqSummary.MYD",
-        "refSeqSummary.MYI",
-        "refSeqSummary.frm",
-        "knownToRefSeq.MYD",
-        "knownToRefSeq.MYI",
-        "knownToRefSeq.frm"
+      "refGene",
+      "refLink"
       ],
       "source_url": "rsync://hgdownload.cse.ucsc.edu/mysql/hg19/",
       "target_dir": "/home/vimal/Workspace/gwips_tools/tests/data/mysql"
     }
-  }
 }

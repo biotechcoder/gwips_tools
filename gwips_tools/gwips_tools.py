@@ -77,6 +77,12 @@ def find_missing_fasta(db):
     return fasta_files
 
 
+def download_mysql_table(src, dst, table):
+    datasets = ["{0}.{1}".format(table, item) for item in ("MYD", "MYI", "frm")]
+    for dataset in datasets:
+        run_rsync('{0}{1}'.format(src, dataset), os.path.join(dst, dataset))
+
+
 def download_fasta(src, dst, fasta_path):
     url = urljoin(src, fasta_path)
     print url

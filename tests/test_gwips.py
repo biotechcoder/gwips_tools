@@ -39,14 +39,15 @@ class RsyncTestCase(GwipsTestCase):
         """Test syncing a real dataset. """
         vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
         genome = vals['genomes'][CONFIG.GENOME]  # hg19
-        output = gwips_tools.run_rsync(
-            os.path.join(genome['source_url'], genome['datasets'][0]),
-            os.path.join(genome['target_dir'], genome['datasets'][0])
+        gwips_tools.download_mysql_table(
+            os.path.join(genome['source_url']),
+            os.path.join(genome['target_dir']), genome['datasets'][0]
         )
-        print output
-        self.assertTrue(
-            os.path.exists(os.path.join(
-                genome['target_dir'], genome['datasets'][0])))
+        for ext in ('.MYD', '.MYI', '.frm'):
+            self.assertTrue(
+                os.path.exists(
+                    os.path.join(genome['target_dir'],
+                                 '{0}{1}'.format(genome['datasets'][0], ext))))
 
 
 class RefSeqTestCase(GwipsTestCase):
@@ -61,7 +62,8 @@ class RefSeqTestCase(GwipsTestCase):
 
         # use one refseq file for test purposes
         mrnas, peps = gwips_tools.download_refseqs(
-            refseq_paths, self.vals['refseq_source_url'], self.vals['refseq_target_dir'])
+            refseq_paths, self.vals['refseq_source_url'],
+            self.vals['refseq_target_dir'])
         self.assertTrue(os.path.exists(mrnas[0]), "mRNA Fasta must be present")
         self.assertTrue(os.path.exists(peps[0]), "Peptide fasta must be present")
 

@@ -81,9 +81,7 @@ if __name__ == '__main__':
         for one_genome in genomes:
             genome = vals['genomes'][one_genome]
             for dataset in genome['datasets']:
-                print 'Syncing {0}/{1}...'.format(one_genome, dataset),
-                gwips_tools.run_rsync(
-                    os.path.join(genome['source_url'], dataset),
-                    os.path.join(genome['target_dir'], dataset)
-                )
+                print 'Syncing {0}/{1}...'.format(one_genome, dataset)
+                gwips_tools.download_mysql_table(
+                    genome['source_url'], genome['target_dir'], dataset)
                 print 'done.'

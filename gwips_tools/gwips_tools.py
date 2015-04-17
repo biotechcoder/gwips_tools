@@ -1,19 +1,43 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import pwd
 import json
-import time
 import shutil
-import urllib2
+import logging
+import logging.handlers
 import subprocess
 import MySQLdb
-from urlparse import urljoin
 
 MYSQL = pwd.getpwnam('mysql')
+log = logging.getLogger('gwips_tools')
+
+
+def setup_logging(log_file):
+    """Setup logging to console and files under log directory."""
+    logger = logging.getLogger('gwips_tools')
+    logger.setLevel(logging.INFO)
+    log_dir = os.path.dirname(log_file)
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
+    fh = logging.handlers.RotatingFileHandler(
+        log_file, maxBytes=10485760, backupCount=5)
+    ch = logging.StreamHandler()
+
+    formatter = logging.Formatter(
+        '%(levelname)s: %(message)s. %(asctime)s.',
+        datefmt='%Y-%m-%d %I:%M %p')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    return logger
 
 
 def is_sudo():
-    """Returns True if sudo is being used (uid = 0) else returns False. """
+    """Returns True if sudo is being used (uid = 0) else returns False."""
     if os.getuid() == 0:
         return True
     else:
@@ -23,21 +47,28 @@ def is_sudo():
 def check_config_json(config):
     """If config.json does not exist, create it from template. """
     if not os.path.exists(config):
-        print 'Creating "{}" from template ...'.format(config)
+        log.info('Creating "{}" from template ...'.format(config))
         template = '{}.sample'.format(config)
         if not os.path.exists(template):
-            sys.exit('config.json.sample missing! Cannot create '
-                     'configuration file. Please create config.json manually '
-                     'before proceeding')
+            log.critical(
+                'config.json.sample missing! Cannot create configuration file. '
+                'Please create config.json manually before proceeding')
+            sys.exit()
         shutil.copy(template, config)
 
 
 def run_rsync(src, dst):
+    """Executes rsync on src -> dst with the -qavzP options."""
     dst_dir = os.path.dirname(dst)
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
     rsync_cmd = ['rsync', '-qavzP', src, dst]
-    subprocess.check_call(rsync_cmd)
+    log.info('{0} -> {1}'.format(src, dst))
+    try:
+        subprocess.check_call(rsync_cmd)
+    except subprocess.CalledProcessError:
+        log.exception('While downloading {}'.format(src))
+        sys.exit(1)
 
 
 def read_config(config):
@@ -45,19 +76,15 @@ def read_config(config):
     try:
         output = json.load(open(config))
     except ValueError:
-        print 'Error reading configuration file. Please check if it is in ' \
-              'the right format'
+        log.critical('Error reading configuration file. Please check if it '
+                     'is in the right format')
         raise
     return output
 
 
-def chown_mysql(fname):
-    """Make mysql:mysql the owner of given file. """
-    os.chown(fname, MYSQL.pw_uid, MYSQL.pw_gid)
-
-
-def find_missing_fasta(db):
-    conn = MySQLdb.connect('localhost', db=db)
+def find_missing_fasta(genome):
+    """Returns list of missing RefSeq mRNA FASTA files for the given genome."""
+    conn = MySQLdb.connect('localhost', db=genome)
     cursor = conn.cursor()
 
     fasta_files = []
@@ -78,20 +105,13 @@ def find_missing_fasta(db):
 
 
 def download_mysql_table(src, dst, table):
-    datasets = ["{0}.{1}".format(table, item) for item in ("MYD", "MYI", "frm")]
+    """Downloads MySQL data, index and table definition files
+    ('MYD', 'MYI', 'frm') for the given table from src to dst using rsync.
+
+    """
+    datasets = ['{0}.{1}'.format(table, item) for item in ('MYD', 'MYI', 'frm')]
     for dataset in datasets:
         run_rsync('{0}{1}'.format(src, dataset), os.path.join(dst, dataset))
-
-
-def download_fasta(src, dst, fasta_path):
-    url = urljoin(src, fasta_path)
-    print url
-    data = urllib2.urlopen(url)
-
-    fasta_file = os.path.join(dst, fasta_path)
-    with open(fasta_file, 'wb') as fp:
-        shutil.copyfileobj(data, fp)
-        return fasta_file
 
 
 def download_refseqs(refseq_paths, source_url, target_dir):
@@ -101,8 +121,8 @@ def download_refseqs(refseq_paths, source_url, target_dir):
     """
     mrnas = []
     peps = []
-    print 'Source URL: {0}\nTarget directory: {1}\nCurrent time: {2}'.format(
-        source_url, target_dir, time.asctime())
+    log.info('Source URL: {0}. Target directory: {1}.'.format(
+        source_url, target_dir))
 
     for refseq in refseq_paths:
         refseq_mrna = refseq.strip().split('/gbdb/genbank/./data/processed/')[1]
@@ -113,7 +133,7 @@ def download_refseqs(refseq_paths, source_url, target_dir):
         for seq, seq_type in ((refseq_mrna, 'mrna'), (refseq_pep, 'protein')):
             target_seq = os.path.join(target_dir, seq)
             if os.path.exists(target_seq):
-                print 'Skipped. File exists: {}'.format(target_seq)
+                log.info('Skipped. File exists: {}'.format(target_seq))
             else:
                 if not dirs_created:
                     base_dir = target_dir
@@ -127,6 +147,5 @@ def download_refseqs(refseq_paths, source_url, target_dir):
                     mrnas.append(target_seq)
                 else:
                     peps.append(target_seq)
-
-    print 'Completed at: {}'.format(time.asctime())
+    log.info('Completed downloading RefSeq\'s')
     return mrnas, peps

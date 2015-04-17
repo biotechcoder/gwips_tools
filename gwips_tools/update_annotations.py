@@ -1,23 +1,23 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 """Downloads annotations in MySQL table format (as mysql user). """
 import os
 import sys
 import pwd
 import argparse
+
 import config
 import gwips_tools
-
 
 # path to the configuration file
 CONFIG = config.ProductionConfig()
 
 
 if __name__ == '__main__':
-    gwips_tools.check_config_json(CONFIG.CONFIG_FILE)
-    if not gwips_tools.is_sudo():
-        print ('WARN: For actual updates (-g or -a), please run this script '
-               'using sudo')
+    log = gwips_tools.setup_logging(
+        os.path.join(CONFIG.APP_DIR, 'log/annotations.log'))
 
+    gwips_tools.check_config_json(CONFIG.CONFIG_FILE)
     usage = """Update annotations for genomes on GWIPS.
 
         To list available genomes, do:
@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
             sudo python update_annotations.py -g genome
 
-"""
+    """
     parser = argparse.ArgumentParser(
         description='All available options', usage=usage)
 
@@ -51,37 +51,43 @@ if __name__ == '__main__':
         action='store_true')
 
     args = parser.parse_args()
-    if not (args.genome or args.list):
-        parser.print_help()
+    if not (args.genome or args.list or args.all):
+        parser.print_usage()
 
     vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
     if args.list:
         print 'Available genomes'
         for org in vals['genomes']:
             print org
-        sys.exit(0)
+        sys.exit()
 
     genomes = []
     wanted_genome = args.genome
     if wanted_genome:
         if wanted_genome not in vals['genomes']:
-            sys.exit('Genome "{}" does not exist in configuration '
-                     'file'.format(wanted_genome))
+            log.critical('Genome "{}" does not exist in configuration '
+                         'file'.format(wanted_genome))
+            sys.exit()
         genomes.append(wanted_genome)
 
     if args.all:
         genomes.extend(key for key in vals['genomes'])
 
     if len(genomes):
+        if not gwips_tools.is_sudo():
+            log.critical(
+                'To do the updates, please run this script using sudo')
+            sys.exit()
         user = pwd.getpwnam(vals['annotations_user'])
-        print 'Switching to user {0}, id {1}, group id {2}'.format(
-            user.pw_name, user.pw_uid, user.pw_gid)
+        log.debug('Switching to user {0}, id {1}, group id {2}'.format(
+            user.pw_name, user.pw_uid, user.pw_gid))
         os.setegid(user.pw_gid), os.seteuid(user.pw_uid)
 
         for one_genome in genomes:
+            log.info('Processing genome {}'.format(one_genome))
             genome = vals['genomes'][one_genome]
             for dataset in genome['datasets']:
-                print 'Syncing {0}/{1}...'.format(one_genome, dataset)
                 gwips_tools.download_mysql_table(
                     genome['source_url'], genome['target_dir'], dataset)
-                print 'done.'
+                log.info('Synchronized {0}/{1}'.format(one_genome, dataset))
+            log.info('Finished processing {}'.format(one_genome))

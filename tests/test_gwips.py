@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import unittest
 import tempfile
@@ -10,11 +11,10 @@ print 'Using configuration file: ', CONFIG.CONFIG_FILE
 class GwipsTestCase(unittest.TestCase):
 
     def setUp(self):
-        gwips_tools.check_config_json(CONFIG.CONFIG_FILE)
-        self.vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
+        self.vals = create_config()
 
     def tearDown(self):
-        os.remove(CONFIG.CONFIG_FILE)
+        remove_config()
         for dirname in (self.vals['genomes'][CONFIG.GENOME]['target_dir'],
                         self.vals['refseq_target_dir']):
             for root, dirs, files in os.walk(dirname, topdown=False):
@@ -25,7 +25,8 @@ class GwipsTestCase(unittest.TestCase):
 
 
 # @unittest.skip('done')
-class RsyncTestCase(GwipsTestCase):
+class AnnotationsTestCase(GwipsTestCase):
+    """Test downloading annotations."""
 
     def test_run_rsync(self):
         """A test run of rsync. """
@@ -37,8 +38,7 @@ class RsyncTestCase(GwipsTestCase):
 
     def test_sync_file(self):
         """Test syncing a real dataset. """
-        vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
-        genome = vals['genomes'][CONFIG.GENOME]  # hg19
+        genome = self.vals['genomes'][CONFIG.GENOME]  # hg19
         gwips_tools.download_mysql_table(
             os.path.join(genome['source_url']),
             os.path.join(genome['target_dir']), genome['datasets'][0]
@@ -51,6 +51,7 @@ class RsyncTestCase(GwipsTestCase):
 
 
 class RefSeqTestCase(GwipsTestCase):
+    """Test downloading RefSeq's."""
 
     def test_download_refseq(self):
         """Given the list of mRNA fasta files from database, download both
@@ -65,14 +66,20 @@ class RefSeqTestCase(GwipsTestCase):
             refseq_paths, self.vals['refseq_source_url'],
             self.vals['refseq_target_dir'])
         self.assertTrue(os.path.exists(mrnas[0]), "mRNA Fasta must be present")
-        self.assertTrue(os.path.exists(peps[0]), "Peptide fasta must be present")
+        self.assertTrue(
+            os.path.exists(peps[0]), 'Peptide fasta must be present')
 
 
 # @unittest.skip('done')
-class ConfigTestCase(GwipsTestCase):
+class ConfigTestCase(unittest.TestCase):
+    """Test config.json."""
+
+    def tearDown(self):
+        remove_config()
 
     def test_read_config(self):
         """rsync URL and datasets must be read from config for an entry. """
+        gwips_tools.check_config_json(CONFIG.CONFIG_FILE)
         vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
         genome = vals['genomes'][CONFIG.GENOME]
         self.assertEqual(genome['source_url'],
@@ -84,6 +91,20 @@ class ConfigTestCase(GwipsTestCase):
         config_file = os.path.join(CONFIG.DATA_DIR, 'config.json')
         gwips_tools.check_config_json(config_file)
         self.assertTrue(os.path.exists(config_file))
+
+
+def create_config():
+    """Create sample config and return values."""
+    gwips_tools.check_config_json(CONFIG.CONFIG_FILE)
+    vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
+    return vals
+
+
+def remove_config():
+    """Remove configuration at the end of the run."""
+    if os.path.exists(CONFIG.CONFIG_FILE):
+        os.remove(CONFIG.CONFIG_FILE)
+
 
 if __name__ == '__main__':
     unittest.main()

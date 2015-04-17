@@ -1,7 +1,7 @@
 Using scripts to updating annotations and sequences
 ===================================================
 The following scripts from gwips_tools can be used to update genome annotations
-and refseq's from UCSC.
+and RefSeq's from UCSC.
 
 * update_annotations.py
 * update_refseq.py
@@ -18,7 +18,9 @@ To update annotations for a genome for example, hg19::
 
     sudo python update_annotations.py -g hg19
 
-Reload MySQL.
+Reload MySQL::
+
+    sudo service mysql reload
 
 To update RefSeq's::
 
@@ -69,7 +71,6 @@ of the ``mysql`` user (``annotations_user``) on the system.
 
 update_refseq.py downloads sequences to directory specified under 
 ``refseq_target_dir``. These are owned by user specified in ``refseq_user``.
-
 
 Tests
 -----

@@ -1,5 +1,5 @@
-Using scripts to updating annotations and sequences
-===================================================
+Scripts for updating annotations and reference sequences from UCSC
+==================================================================
 The following scripts from gwips_tools can be used to update genome annotations
 and RefSeq's from UCSC.
 

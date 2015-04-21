@@ -14,8 +14,7 @@ CONFIG = config.ProductionConfig()
 
 
 if __name__ == '__main__':
-    log = gwips_tools.setup_logging(
-        os.path.join(CONFIG.APP_DIR, 'log/annotations.log'))
+    log = gwips_tools.setup_logging(CONFIG, file_name='annotations.log')
 
     gwips_tools.check_config_json(CONFIG.CONFIG_FILE)
     usage = """Update annotations for genomes on GWIPS.

@@ -12,8 +12,7 @@ import gwips_tools
 CONFIG = config.ProductionConfig()
 
 if __name__ == '__main__':
-    logger = gwips_tools.setup_logging(
-        os.path.join(CONFIG.APP_DIR, 'log/refseq.log'))
+    log = gwips_tools.setup_logging(CONFIG, file_name='refseq.log')
 
     gwips_tools.check_config_json(CONFIG.CONFIG_FILE)
     parser = argparse.ArgumentParser('Available options')
@@ -37,25 +36,22 @@ if __name__ == '__main__':
     if args.genome:
         wanted_genome = args.genome
         if wanted_genome not in vals['genomes']:
-            logger.critical('Genome "{}" does not exist in configuration '
-                            'file'.format(wanted_genome))
+            log.critical('Genome "{}" does not exist in configuration '
+                         'file'.format(wanted_genome))
             sys.exit()
 
         if not gwips_tools.is_sudo():
-            logger.critical(
+            log.critical(
                 'To do the updates, please run this script using sudo')
             sys.exit()
 
-        # for testing, we use a single sequence instead of querying mysql
-        # fasta_files = [open('../tests/data/missing.fa').readline().strip()]
         fasta_files = gwips_tools.find_missing_fasta(wanted_genome)
-
         if not len(fasta_files):
-            logger.info('No files to download')
+            log.info('No files to download')
             sys.exit()
 
         user = pwd.getpwnam(vals['refseq_user'])
-        logger.debug('Switching to user {0}, id {1}, group id {2}'.format(
+        log.debug('Switching to user {0}, id {1}, group id {2}'.format(
             user.pw_name, user.pw_uid, user.pw_gid))
 
         os.setegid(user.pw_gid), os.seteuid(user.pw_uid)

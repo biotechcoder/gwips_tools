@@ -8,31 +8,34 @@ import logging
 import logging.handlers
 import subprocess
 import MySQLdb
+import config
 
 MYSQL = pwd.getpwnam('mysql')
 log = logging.getLogger('gwips_tools')
 
 
-def setup_logging(log_file):
-    """Setup logging to console and files under log directory."""
+def setup_logging(conf, file_name):
+    """Setup logging to console and files under log directory
+    (only in production mode).
+
+    """
     logger = logging.getLogger('gwips_tools')
     logger.setLevel(logging.INFO)
-    log_dir = os.path.dirname(log_file)
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
 
-    fh = logging.handlers.RotatingFileHandler(
-        log_file, maxBytes=10485760, backupCount=5)
     ch = logging.StreamHandler()
-
-    formatter = logging.Formatter(
-        '%(levelname)s: %(message)s. %(asctime)s.',
-        datefmt='%Y-%m-%d %I:%M %p')
-    fh.setFormatter(formatter)
+    formatter = logging.Formatter('%(levelname)s: %(message)s. %(asctime)s.',
+                                  datefmt='%Y-%m-%d %I:%M %p')
     ch.setFormatter(formatter)
-
-    logger.addHandler(fh)
     logger.addHandler(ch)
+
+    if isinstance(conf, config.ProductionConfig):
+        log_dir = os.path.join(conf.APP_DIR, 'log')
+        if not os.path.exists(log_dir):
+            os.mkdir(log_dir)
+        fh = logging.handlers.RotatingFileHandler(
+            os.path.join(log_dir, file_name), maxBytes=10485760, backupCount=5)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
     return logger
 
 
@@ -44,17 +47,17 @@ def is_sudo():
         return False
 
 
-def check_config_json(config):
+def check_config_json(conf):
     """If config.json does not exist, create it from template. """
-    if not os.path.exists(config):
-        log.info('Creating "{}" from template ...'.format(config))
-        template = '{}.sample'.format(config)
+    if not os.path.exists(conf):
+        log.info('Creating "{}" from template ...'.format(conf))
+        template = '{}.sample'.format(conf)
         if not os.path.exists(template):
             log.critical(
                 'config.json.sample missing! Cannot create configuration file. '
                 'Please create config.json manually before proceeding')
             sys.exit()
-        shutil.copy(template, config)
+        shutil.copy(template, conf)
 
 
 def run_rsync(src, dst):
@@ -71,10 +74,10 @@ def run_rsync(src, dst):
         sys.exit(1)
 
 
-def read_config(config):
+def read_config(conf):
     """Read a config file and return a dictionary. """
     try:
-        output = json.load(open(config))
+        output = json.load(open(conf))
     except ValueError:
         log.critical('Error reading configuration file. Please check if it '
                      'is in the right format')

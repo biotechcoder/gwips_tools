@@ -85,15 +85,15 @@ def read_config(conf):
     return output
 
 
-def find_missing_fasta(genome):
+def find_missing_fasta(genome, gene_table='refGene'):
     """Returns list of missing RefSeq mRNA FASTA files for the given genome."""
     conn = MySQLdb.connect('localhost', db=genome)
     cursor = conn.cursor()
 
     fasta_files = []
     sql = ('select distinct(gbExtFile.path) from gbExtFile join gbSeq '
-           'on (gbSeq.gbExtFile=gbExtFile.id) join refGene on '
-           '(refGene.name = gbSeq.acc);')
+           'on (gbSeq.gbExtFile=gbExtFile.id) join {0} on '
+           '({0}.name = gbSeq.acc);'.format(gene_table))
     cursor.execute(sql)
     while 1:
         row = cursor.fetchone()

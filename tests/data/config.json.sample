@@ -6,11 +6,12 @@
   "genomes": {
     "hg19": {
       "datasets": [
-      "refGene",
-      "refLink"
+        "refGene",
+        "refLink"
       ],
       "source_url": "rsync://hgdownload.cse.ucsc.edu/mysql/hg19/",
-      "target_dir": "/home/vimal/Workspace/gwips_tools/tests/data/mysql"
+      "target_dir": "/home/vimal/Workspace/gwips_tools/tests/data/mysql",
+      "gene_table": "refGene"
     }
-}
+  }
 }

@@ -29,7 +29,7 @@ if __name__ == '__main__':
     vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
     if args.list:
         print 'Available genomes'
-        for org in vals:
+        for org in vals['genomes']:
             print org
         sys.exit()
 
@@ -41,11 +41,11 @@ if __name__ == '__main__':
             sys.exit()
 
         if not gwips_tools.is_sudo():
-            log.critical(
-                'To do the updates, please run this script using sudo')
+            log.critical('To do the updates, please run this script using sudo')
             sys.exit()
 
-        fasta_files = gwips_tools.find_missing_fasta(wanted_genome)
+        gene_table = vals['genomes'][wanted_genome]['gene_table']
+        fasta_files = gwips_tools.find_missing_fasta(wanted_genome, gene_table)
         if not len(fasta_files):
             log.info('No files to download')
             sys.exit()

@@ -55,32 +55,23 @@ if __name__ == '__main__':
 
     vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
     if args.list:
-        print 'Available genomes'
-        for org in vals['genomes']:
-            print org
-        sys.exit()
+        gwips_tools.list_genomes(vals)
 
     genomes = []
     wanted_genome = args.genome
     if wanted_genome:
-        if wanted_genome not in vals['genomes']:
-            log.critical('Genome "{}" does not exist in configuration '
-                         'file'.format(wanted_genome))
+        if gwips_tools.is_genome_in_config(vals, wanted_genome):
+            genomes.append(wanted_genome)
+        else:
             sys.exit()
-        genomes.append(wanted_genome)
 
     if args.all:
         genomes.extend(key for key in vals['genomes'])
 
     if len(genomes):
-        if not gwips_tools.is_sudo():
-            log.critical(
-                'To do the updates, please run this script using sudo')
-            sys.exit()
+        gwips_tools.check_sudo()
         user = pwd.getpwnam(vals['annotations_user'])
-        log.debug('Switching to user {0}, id {1}, group id {2}'.format(
-            user.pw_name, user.pw_uid, user.pw_gid))
-        os.setegid(user.pw_gid), os.seteuid(user.pw_uid)
+        gwips_tools.switch_user(user)
 
         for one_genome in genomes:
             log.info('Processing genome {}'.format(one_genome))

@@ -39,11 +39,37 @@ def setup_logging(conf, file_name):
     return logger
 
 
-def is_sudo():
+def check_sudo():
     """Returns True if sudo is being used (uid = 0) else returns False."""
     if os.getuid() == 0:
+        return
+    else:
+        log.critical('To do the updates, please run this script using sudo')
+        sys.exit()
+
+
+def switch_user(user):
+    """Switch to user with sudo. """
+    log.debug('Switching to user {0}, id {1}, group id {2}'.format(
+        user.pw_name, user.pw_uid, user.pw_gid))
+    os.setegid(user.pw_gid), os.seteuid(user.pw_uid)
+
+
+def list_genomes(conf):
+    """List available genomes from configuration. """
+    print '\nAvailable genomes:'
+    for genome in conf['genomes']:
+        print genome
+    sys.exit()
+
+
+def is_genome_in_config(conf, genome):
+    """Return if genome is defined in configuration (T/F). """
+    if genome in conf['genomes']:
         return True
     else:
+        log.critical('Genome "{}" does not exist in configuration '
+                     'file'.format(genome))
         return False
 
 

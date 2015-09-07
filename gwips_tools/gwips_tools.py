@@ -7,7 +7,6 @@ import shutil
 import logging
 import logging.handlers
 import subprocess
-import MySQLdb
 import config
 
 MYSQL = pwd.getpwnam('mysql')
@@ -20,7 +19,7 @@ def setup_logging(conf, file_name):
 
     """
     logger = logging.getLogger('gwips_tools')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     ch = logging.StreamHandler()
     formatter = logging.Formatter('%(levelname)s: %(message)s. %(asctime)s.',
@@ -115,29 +114,6 @@ def read_config(conf):
     return output
 
 
-def find_missing_fasta(genome, gene_table='refGene'):
-    """Returns list of missing RefSeq mRNA FASTA files for the given genome."""
-    conn = MySQLdb.connect(host='localhost', db=genome, read_default_file="~/.my.cnf", read_default_group="client")
-    cursor = conn.cursor()
-
-    fasta_files = []
-    sql = ('select distinct(gbExtFile.path) from gbExtFile join gbSeq '
-           'on (gbSeq.gbExtFile=gbExtFile.id) join {0} on '
-           '({0}.name = gbSeq.acc);'.format(gene_table))
-    log.debug(sql)
-    cursor.execute(sql)
-    while 1:
-        row = cursor.fetchone()
-        if not row:
-            break
-        # /gbdb/genbank/./data/processed/refseq.69/daily.2015.0316/mrna.fa
-        fasta_files.append(row[0])
-
-    cursor.close()
-    conn.close()
-    return fasta_files
-
-
 def download_refseqs(refseq_paths, source_url, target_dir, dry_run=False):
     """Given the list of mRNA fasta files from database, download both mRNA
     and Protein FASTA sequences to target_dir.
@@ -147,8 +123,7 @@ def download_refseqs(refseq_paths, source_url, target_dir, dry_run=False):
     """
     mrnas = []
     peps = []
-    log.info('Source URL: {0}. Target directory: {1}.'.format(
-        source_url, target_dir))
+    log.info('Source URL: {0}. Target directory: {1}.'.format(source_url, target_dir))
 
     for refseq in refseq_paths:
         refseq_mrna = refseq.strip().split('/gbdb/genbank/./data/processed/')[1]
@@ -159,7 +134,7 @@ def download_refseqs(refseq_paths, source_url, target_dir, dry_run=False):
         for seq, seq_type in ((refseq_mrna, 'mrna'), (refseq_pep, 'protein')):
             target_seq = os.path.join(target_dir, seq)
             if os.path.exists(target_seq):
-                log.info('Skipped. File exists: {}'.format(target_seq))
+                log.debug('Skipped. File exists: {}'.format(target_seq))
             else:
                 if not dirs_created:
                     base_dir = target_dir
@@ -168,6 +143,7 @@ def download_refseqs(refseq_paths, source_url, target_dir, dry_run=False):
                         if not os.path.exists(base_dir) and not dry_run:
                             os.mkdir(base_dir)
                     dirs_created = True
+
                 run_rsync(os.path.join(source_url, seq), target_seq, dry_run)
                 if seq_type == 'mrna':
                     mrnas.append(target_seq)

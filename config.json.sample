@@ -3,6 +3,7 @@
   "refseq_target_dir": "/home/vimal/Workspace/gwips_tools/tests/data/genbank",
   "annotations_user": "vimal",
   "refseq_user": "vimal",
+  "backup_dir": "/home/vimal/backup",
   "genomes": {
     "hg19": {
       "datasets": [

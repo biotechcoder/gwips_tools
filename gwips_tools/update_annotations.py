@@ -85,10 +85,13 @@ if __name__ == '__main__':
                          ('MYD', 'MYI', 'frm')]
 
                 for mysql_file in files:
-                    gwips_tools.run_rsync('{0}{1}'.format(
-                        genome['source_url'], mysql_file),
-                        os.path.join(genome['target_dir'], mysql_file),
-                        dry_run=args.dry_run)
+                    source_file = '{0}{1}'.format(genome['source_url'], mysql_file)
+                    target_file = os.path.join(genome['target_dir'], mysql_file)
 
-                log.info('Synchronized {0}/{1}'.format(one_genome, dataset))
+                    # take a backup first
+                    log.info('Backup {}'.format(mysql_file))
+                    gwips_tools.run_rsync(target_file, os.path.join(vals['backup_dir'], one_genome, mysql_file), dry_run=args.dry_run)
+                    gwips_tools.run_rsync(source_file, target_file, dry_run=args.dry_run)
+
+                log.info('Synchronized {0}/{1}\n'.format(one_genome, dataset))
             log.info('Finished processing {}'.format(one_genome))

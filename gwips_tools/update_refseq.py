@@ -3,8 +3,7 @@
 import pwd
 import sys
 import argparse
-import logging
-
+import MySQLdb
 import config
 import gwips_tools
 
@@ -59,13 +58,31 @@ if __name__ == '__main__':
         all_fasta_files = []
         for genome in genomes:
             log.info('Processing genome: {}'.format(genome))
-            gene_table = vals['genomes'][genome]['gene_table']
-            fasta_files = gwips_tools.find_missing_fasta(genome, gene_table)
+
+            # find listst of missing RefSeq mRNA FASTA files for the given genome."""
+            conn = MySQLdb.connect(
+                host='localhost', db=genome,
+                read_default_file='/home/{}/.my.cnf'.format(vals['refseq_user']),
+                read_default_group='client')
+            cursor = conn.cursor()
+            fasta_files = []
+            sql = ('select distinct(gbExtFile.path) from gbExtFile join gbSeq '
+                   'on (gbSeq.gbExtFile=gbExtFile.id) join {0} on '
+                   '({0}.name = gbSeq.acc);'.format(vals['genomes'][genome]['gene_table']))
+            log.debug(sql)
+            cursor.execute(sql)
+            while 1:
+                row = cursor.fetchone()
+                if not row:
+                    break
+                # /gbdb/genbank/./data/processed/refseq.69/daily.2015.0316/mrna.fa
+                fasta_files.append(row[0])
+            cursor.close()
+            conn.close()
 
             if len(fasta_files):
                 all_fasta_files.extend(fasta_files)
 
-        # remove duplicates and download refseqs
         gwips_tools.download_refseqs(
             list(set(all_fasta_files)), vals['refseq_source_url'],
             vals['refseq_target_dir'], dry_run=args.dry_run)

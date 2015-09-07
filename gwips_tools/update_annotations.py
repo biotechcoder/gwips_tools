@@ -48,6 +48,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '-l', '--list', help='List available genomes from configuration file',
         action='store_true')
+    parser.add_argument(
+        '-n', '--dry_run', help='Dry run. No files are downloaded (rsync -n)',
+        action='store_true')
 
     args = parser.parse_args()
     if not (args.genome or args.list or args.all):
@@ -76,8 +79,16 @@ if __name__ == '__main__':
         for one_genome in genomes:
             log.info('Processing genome {}'.format(one_genome))
             genome = vals['genomes'][one_genome]
+
             for dataset in genome['datasets']:
-                gwips_tools.download_mysql_table(
-                    genome['source_url'], genome['target_dir'], dataset)
+                files = ['{0}.{1}'.format(dataset, item) for item in
+                         ('MYD', 'MYI', 'frm')]
+
+                for mysql_file in files:
+                    gwips_tools.run_rsync('{0}{1}'.format(
+                        genome['source_url'], mysql_file),
+                        os.path.join(genome['target_dir'], mysql_file),
+                        dry_run=args.dry_run)
+
                 log.info('Synchronized {0}/{1}'.format(one_genome, dataset))
             log.info('Finished processing {}'.format(one_genome))

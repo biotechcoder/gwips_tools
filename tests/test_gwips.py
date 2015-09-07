@@ -39,15 +39,14 @@ class AnnotationsTestCase(GwipsTestCase):
     def test_sync_file(self):
         """Test syncing a real dataset. """
         genome = self.vals['genomes'][CONFIG.GENOME]  # hg19
-        gwips_tools.download_mysql_table(
-            os.path.join(genome['source_url']),
-            os.path.join(genome['target_dir']), genome['datasets'][0]
-        )
-        for ext in ('.MYD', '.MYI', '.frm'):
-            self.assertTrue(
-                os.path.exists(
-                    os.path.join(genome['target_dir'],
-                                 '{0}{1}'.format(genome['datasets'][0], ext))))
+        for item in genome['datasets']:
+            for ext in ('.MYD', '.MYI', '.frm'):
+                dataset = '{0}{1}'.format(item, ext)
+                gwips_tools.run_rsync(
+                    '{0}{1}'.format(genome['source_url'], dataset),
+                    os.path.join(genome['target_dir'], dataset))
+                self.assertTrue(
+                    os.path.exists(os.path.join(genome['target_dir'], dataset)))
 
 
 class RefSeqTestCase(GwipsTestCase):

@@ -20,7 +20,7 @@ def setup_logging(conf, file_name):
 
     """
     logger = logging.getLogger('gwips_tools')
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     ch = logging.StreamHandler()
     formatter = logging.Formatter('%(levelname)s: %(message)s. %(asctime)s.',
@@ -44,8 +44,7 @@ def check_sudo():
     if os.getuid() == 0:
         return
     else:
-        log.critical('To do the updates, please run this script using sudo')
-        sys.exit()
+        sys.exit('To do the updates, please run this script using sudo')
 
 
 def switch_user(user):
@@ -60,6 +59,7 @@ def list_genomes(conf):
     print '\nAvailable genomes:'
     for genome in conf['genomes']:
         print genome
+    print
     sys.exit()
 
 
@@ -86,12 +86,16 @@ def check_config_json(conf):
         shutil.copy(template, conf)
 
 
-def run_rsync(src, dst):
+def run_rsync(src, dst, dry_run=False):
     """Executes rsync on src -> dst with the -qavzP options."""
     dst_dir = os.path.dirname(dst)
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
-    rsync_cmd = ['rsync', '-qavzP', src, dst]
+
+    options = '-avzP'
+    if dry_run:
+        options += 'nh'  # also print human readable summary
+    rsync_cmd = ['rsync', options, src, dst]
     log.info('{0} -> {1}'.format(src, dst))
     try:
         subprocess.check_call(rsync_cmd)
@@ -113,13 +117,14 @@ def read_config(conf):
 
 def find_missing_fasta(genome, gene_table='refGene'):
     """Returns list of missing RefSeq mRNA FASTA files for the given genome."""
-    conn = MySQLdb.connect('localhost', db=genome)
+    conn = MySQLdb.connect(host='localhost', db=genome, read_default_file="~/.my.cnf", read_default_group="client")
     cursor = conn.cursor()
 
     fasta_files = []
     sql = ('select distinct(gbExtFile.path) from gbExtFile join gbSeq '
            'on (gbSeq.gbExtFile=gbExtFile.id) join {0} on '
            '({0}.name = gbSeq.acc);'.format(gene_table))
+    log.debug(sql)
     cursor.execute(sql)
     while 1:
         row = cursor.fetchone()
@@ -133,19 +138,11 @@ def find_missing_fasta(genome, gene_table='refGene'):
     return fasta_files
 
 
-def download_mysql_table(src, dst, table):
-    """Downloads MySQL data, index and table definition files
-    ('MYD', 'MYI', 'frm') for the given table from src to dst using rsync.
-
-    """
-    datasets = ['{0}.{1}'.format(table, item) for item in ('MYD', 'MYI', 'frm')]
-    for dataset in datasets:
-        run_rsync('{0}{1}'.format(src, dataset), os.path.join(dst, dataset))
-
-
-def download_refseqs(refseq_paths, source_url, target_dir):
+def download_refseqs(refseq_paths, source_url, target_dir, dry_run=False):
     """Given the list of mRNA fasta files from database, download both mRNA
     and Protein FASTA sequences to target_dir.
+
+    If mrna.fa or pep.fa exists in target_dir, download is skipped.
 
     """
     mrnas = []
@@ -168,10 +165,10 @@ def download_refseqs(refseq_paths, source_url, target_dir):
                     base_dir = target_dir
                     for dpath in dir_paths:
                         base_dir = os.path.join(base_dir, dpath)
-                        if not os.path.exists(base_dir):
+                        if not os.path.exists(base_dir) and not dry_run:
                             os.mkdir(base_dir)
                     dirs_created = True
-                run_rsync(os.path.join(source_url, seq), target_seq)
+                run_rsync(os.path.join(source_url, seq), target_seq, dry_run)
                 if seq_type == 'mrna':
                     mrnas.append(target_seq)
                 else:

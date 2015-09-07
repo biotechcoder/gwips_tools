@@ -6,6 +6,16 @@ and RefSeq's from UCSC.
 * update_annotations.py
 * update_refseq.py
 
+
+Requirements
+------------
+**MySQL server and MySQL-python package**
+
+On Ubuntu 14.04, you can install the following packages to get
+all the requirements - ``mysql-server``, ``libmysqlclient-dev`` and
+``python-mysqldb``.
+
+
 Usage
 -----
 For both the scripts, the ``-h`` flag prints a help message.

@@ -125,6 +125,10 @@ def download_refseqs(refseq_paths, source_url, target_dir, dry_run=False):
     peps = []
     log.info('Source URL: {0}. Target directory: {1}.'.format(source_url, target_dir))
 
+    if not os.path.exists(target_dir):
+        log.info('Target directory does not exist. Creating it ...\n{}'.format(target_dir))
+        os.mkdir(target_dir)
+
     for refseq in refseq_paths:
         refseq_mrna = refseq.strip().split('/gbdb/genbank/./data/processed/')[1]
         dir_paths = os.path.split(refseq_mrna)[0].split('/')

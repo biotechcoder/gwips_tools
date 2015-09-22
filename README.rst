@@ -36,6 +36,10 @@ To update RefSeq's::
 
     sudo python update_refseq.py -g hg19
 
+For convenience, a sample bash script is included which can be used to update the
+annotations followed by the reference sequences. Copy ``update_all.sh.sample`` to
+``update_all.sh`` and then modify the list of genomes to update and the path.
+
 `Why sudo? <sudo>`_
 
 Configuration - adding/updating available genomes

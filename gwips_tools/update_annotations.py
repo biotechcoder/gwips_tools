@@ -93,7 +93,7 @@ if __name__ == '__main__':
                     if os.path.exists(target_file):
                         gwips_tools.run_rsync(target_file, backup_file, dry_run=args.dry_run)
                     else:
-                        log.warn('File does not exist in source. Nothing to backup \n{}'.format(backup_file))
+                        log.warn('File does not exist in source. Nothing to backup \n{}'.format(target_file))
                     gwips_tools.run_rsync(source_file, target_file, dry_run=args.dry_run)
 
                 log.info('Synchronized {0}/{1}\n'.format(one_genome, dataset))

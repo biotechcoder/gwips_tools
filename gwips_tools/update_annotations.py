@@ -90,7 +90,7 @@ if __name__ == '__main__':
                     # take a backup first
                     log.info('Backup {}'.format(mysql_file))
                     backup_file = os.path.join(vals['backup_dir'], one_genome, mysql_file)
-                    if os.path.exists(backup_file):
+                    if os.path.exists(target_file):
                         gwips_tools.run_rsync(target_file, backup_file, dry_run=args.dry_run)
                     else:
                         log.warn('File does not exist in source. Nothing to backup \n{}'.format(backup_file))

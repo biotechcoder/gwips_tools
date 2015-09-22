@@ -84,10 +84,11 @@ update_refseq.py downloads sequences to directory specified under
 
 Tests
 -----
-Please change paths in ``tests/config.json.sample`` and then run the test suite
-from the main source directory ::
+Please copy ``tests/data/config.json.sample`` to ``tests/data/config.json``
+Change paths for ``refseq_target_dir``, ``target_dir`` and ``backup_dir``.
+
+Now run the test suite from the main source directory ::
 
     sh runtests.sh
 
-Tests use a different configuration file ``tests/data/config.json``.
 Test configuration can be updated in ``gwips_tools/config.py``.

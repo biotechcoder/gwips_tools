@@ -14,7 +14,6 @@ class GwipsTestCase(unittest.TestCase):
         self.vals = create_config()
 
     def tearDown(self):
-        remove_config()
         for dirname in (self.vals['genomes'][CONFIG.GENOME]['target_dir'],
                         self.vals['refseq_target_dir']):
             for root, dirs, files in os.walk(dirname, topdown=False):
@@ -24,7 +23,6 @@ class GwipsTestCase(unittest.TestCase):
                     os.rmdir(os.path.join(root, name))
 
 
-# @unittest.skip('done')
 class AnnotationsTestCase(GwipsTestCase):
     """Test downloading annotations."""
 
@@ -69,12 +67,8 @@ class RefSeqTestCase(GwipsTestCase):
             os.path.exists(peps[0]), 'Peptide fasta must be present')
 
 
-# @unittest.skip('done')
 class ConfigTestCase(unittest.TestCase):
     """Test config.json."""
-
-    def tearDown(self):
-        remove_config()
 
     def test_read_config(self):
         """rsync URL and datasets must be read from config for an entry. """
@@ -97,12 +91,6 @@ def create_config():
     gwips_tools.check_config_json(CONFIG.CONFIG_FILE)
     vals = gwips_tools.read_config(CONFIG.CONFIG_FILE)
     return vals
-
-
-def remove_config():
-    """Remove configuration at the end of the run."""
-    if os.path.exists(CONFIG.CONFIG_FILE):
-        os.remove(CONFIG.CONFIG_FILE)
 
 
 if __name__ == '__main__':

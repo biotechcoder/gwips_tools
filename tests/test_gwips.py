@@ -77,7 +77,7 @@ class ConfigTestCase(unittest.TestCase):
         genome = vals['genomes'][CONFIG.GENOME]
         self.assertEqual(genome['source_url'],
                          'rsync://hgdownload.cse.ucsc.edu/mysql/hg19/')
-        self.assertTrue(len(genome['datasets']) > 1)
+        self.assertTrue(len(genome['datasets']) >= 1)
 
     def test_create_config(self):
         """Test if config.json can be created from sample. """

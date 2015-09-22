@@ -81,8 +81,7 @@ if __name__ == '__main__':
             genome = vals['genomes'][one_genome]
 
             for dataset in genome['datasets']:
-                files = ['{0}.{1}'.format(dataset, item) for item in
-                         ('MYD', 'MYI', 'frm')]
+                files = ['{0}.{1}'.format(dataset, item) for item in ('MYD', 'MYI', 'frm')]
 
                 for mysql_file in files:
                     source_file = '{0}{1}'.format(genome['source_url'], mysql_file)
@@ -90,7 +89,11 @@ if __name__ == '__main__':
 
                     # take a backup first
                     log.info('Backup {}'.format(mysql_file))
-                    gwips_tools.run_rsync(target_file, os.path.join(vals['backup_dir'], one_genome, mysql_file), dry_run=args.dry_run)
+                    backup_file = os.path.join(vals['backup_dir'], one_genome, mysql_file)
+                    if os.path.exists(backup_file):
+                        gwips_tools.run_rsync(target_file, backup_file, dry_run=args.dry_run)
+                    else:
+                        log.warn('File does not exist in source. Nothing to backup \n{}'.format(backup_file))
                     gwips_tools.run_rsync(source_file, target_file, dry_run=args.dry_run)
 
                 log.info('Synchronized {0}/{1}\n'.format(one_genome, dataset))

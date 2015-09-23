@@ -7,6 +7,9 @@ python gwips_tools/update_annotations.py -a
 
 service mysql reload
 
+# wait for mysql to finish reloading
+sleep 30
+
 for genome in $GENOMES
 do
     python gwips_tools/update_refseq.py -g $genome
